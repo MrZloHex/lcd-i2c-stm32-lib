@@ -24,6 +24,84 @@
 #endif
 
 
+#define I2CLCD_RS_POS			(0)
+#define I2CLCD_RW_POS			(1)
+#define I2CLCD_E_POS			(2)
+#define I2CLCD_BL_POS			(3)
+
+
+#define I2CLCD_RS				(1 << I2CLCD_RS_POS)
+#define I2CLCD_RW				(1 << I2CLCD_RW_POS)
+#define I2CLCD_E				(1 << I2CLCD_E_POS)
+#define I2CLCD_BL				(1 << I2CLCD_BL_POS)
+
+// Defines for command access
+#define CLR_DISPLAY				(1<<0)
+#define RET_HOME				(1<<1)
+#define MODE_SET				(1<<2)
+#define DISP_CTRL				(1<<3)
+#define CD_SHIFT				(1<<4)
+#define FUNC_SET				(1<<5)
+#define CGRAM_ADDR				(1<<6)
+#define DDRAM_ADDR				(1<<7)
+
+#define MODE_SET_INCR			(1<<1)
+#define MODE_SET_DECR			(0)
+#define MODE_SET_DISP_SHIFT_ON	(1<<0)
+#define MODE_SET_DISP_SHIFT_OFF	(0)
+
+#define SHIFT					(1<<0)
+#define DIR_INCR_DECR			(1<<1)
+
+#define DISP_CTRL_BLINK_ON		(1<<0)
+#define DISP_CTRL_BLINK_OFF		(0)
+
+#define DISP_CTRL_CURSOR_ON		(1<<1)
+#define DISP_CTRL_CURSOR_OFF	(0)
+
+#define DISP_CTRL_DISPLAY_ON	(1<<2)
+#define DISP_CTRL_DISPLAY_OFF	(0)
+
+#define CD_SHIFT_DSIPLAY		(1<<3)
+#define CD_SHIFT_CURSOR			(0)
+
+#define CD_SHIFT_RIGHT			(1<<2)
+#define CD_SHIFT_LEFT			(1<<2)
+
+#define FUNC_SET_FO_5X10		(1<<2)
+#define FUNC_SET_FO_5X8			0
+#define FUNC_SET_LINES_2		(1<<3)
+#define FUNC_SET_LINES_1		0
+#define FUNC_SET_DLEN_8B		(1<<4)
+#define FUNC_SET_DLEN_4B		0
+
+
+// SendByte options for physical access
+// opts[0]	0: Send Command (RS = 0)
+//			1: Send Data (RS = 1)
+// opts[1]	0: Send 8 bits (2 by 4bits)
+// opts[1]	1: Send 4 bits
+// opts[2]	0: Backlight On
+// opts[2]	1: Backlight Off
+
+#define I2CLCD_OPTS_RS			(1<<0)
+#define I2CLCD_OPTS_DATA		I2CLCD_OPTS_RS
+#define I2CLCD_OPTS_COMMAND		(0)
+
+#define I2CLCD_OPTS_INIT		(1<<1)
+#define I2CLCD_OPTS_NOINIT		(0)
+#define I2CLCD_OPTS_4B			I2CLCD_OPTS_INIT
+#define I2CLCD_OPTS_8B			I2CLCD_OPTS_NOINIT
+
+#define I2CLCD_OPTS_WAIT_BF		(1<<3)
+
+#define I2CLCD_MAX_BF_POLLS		127
+
+#define DIR_INCR DIR_INCR_DECR & 0xFF
+
+#define I2CLCD_CGRAM_ADDR_POS	(3)
+
+
 typedef enum LCD_Size_E
 {
 	LCD_16x2   = 0x2U,
@@ -39,6 +117,14 @@ typedef struct LCD_I2C_S
 	uint8_t 	address;
 	uint32_t 	timeout;
 	LCD_Size 	size;
+
+	uint8_t entry_mode_set;
+	uint8_t diplay_ctrl;
+	uint8_t cursor_display_shift;
+	uint8_t function_set;
+	uint8_t	cgram_addr;
+	uint8_t ddram_addr;
+	uint8_t blacklight;
 } LCD_I2C;
 
 /**
@@ -69,6 +155,10 @@ lcd_i2c_init
  */
 void
 lcd_i2c_set_cursor(LCD_I2C *lcd, uint8_t x, uint8_t y);
+
+
+HAL_StatusTypeDef
+lcd_i2c_char(LCD_I2C *lcd, uint8_t chr);
 
 /**
  * @brief Print string to set position
@@ -122,10 +212,35 @@ void
 lcd_i2c_clear(LCD_I2C *lcd);
 
 HAL_StatusTypeDef
+lcd_i2c_blink(LCD_I2C* lcd, uint8_t blink_en);
+
+HAL_StatusTypeDef
+lcd_i2c_cursor(LCD_I2C *lcd, uint8_t cursor_en);
+
+HAL_StatusTypeDef
+lcd_i2c_home(LCD_I2C *lcd);
+
+HAL_StatusTypeDef
+lcd_i2c_set_abs_cursor(LCD_I2C *lcd, uint8_t pos);
+
+HAL_StatusTypeDef
+lcd_i2c_get_abs_cursor(LCD_I2C *lcd, uint8_t *pos);
+
+HAL_StatusTypeDef
+lcd_i2c_make_custom_char(LCD_I2C *lcd, uint8_t cgaddr, uint8_t *charmap);
+
+
+HAL_StatusTypeDef
 _lcd_i2c_cmd(LCD_I2C *lcd, uint8_t cmd);
 
 HAL_StatusTypeDef
-_lcd_i2c_data(LCD_I2C *lcd, uint8_t data);
+_lcd_i2c_cmd_4bit(LCD_I2C *lcd, uint8_t cmd);
+
+HAL_StatusTypeDef
+_lcd_i2c_data(LCD_I2C *lcd, uint8_t data, uint8_t opts);
+
+HAL_StatusTypeDef
+_lcd_i2c_get_data(LCD_I2C *lcd, uint8_t *data);
 
 #endif /* __LCD_I2C_H__ */
 
